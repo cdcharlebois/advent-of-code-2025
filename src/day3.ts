@@ -15,7 +15,7 @@ export const part1 = async (input: string): Promise<number | undefined> => {
     }
     return joltage;
 }
-4234234234278
+
 export const part2 = async (input: string): Promise<number | undefined> => {
     console.log("day 3 part 2")
     const banks = input.split("\n");
@@ -24,19 +24,7 @@ export const part2 = async (input: string): Promise<number | undefined> => {
     for (const bank of banks) {
         const jolts = recursivelyAssemble(bank, 11, "");
         console.log({jolts})
-        joltage += parseInt(jolts);
-        // const bankLength = bank.length;
-        // let remainderLength = 12;
-        // let jolts;
-        // const [max, index] = maxInSequence(bank);
-        // // index = length-12 → only one solution ✅)
-        // if (index === bankLength - remainderLength) {
-        //     jolts = parseInt(bank.slice(bankLength - remainderLength))
-        //     joltage += jolts;
-        // } else if (index < bankLength - remainderLength){
-        //     const [max, index] = maxInSequence(bank.slice(index)) /// with new remainder
-        // }
-        
+        joltage += parseInt(jolts);        
     }
     return joltage;
 }
@@ -45,11 +33,11 @@ export const part2 = async (input: string): Promise<number | undefined> => {
 const recursivelyAssemble = (bank: string, remainder: number, base: string) : string => {
     // find the highest number that isn't in the last 11 digits
     if (remainder === -1) return base;
-    console.log({bank, remainder, base});
+    // console.log({bank, remainder, base});
     const possibleNumbers = bank.slice(0, bank.length-remainder);
-    console.log({possibleNumbers})
+    // console.log({possibleNumbers})
     const [maxInPossible, index] = maxInSequence(possibleNumbers);
-    console.log({maxInPossible, index})
+    // console.log({maxInPossible, index})
     base += `${maxInPossible}`
     return recursivelyAssemble(bank.slice(index+1), remainder-1, base);
 
