@@ -1,4 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuid} from "uuid"
+
+const randomId = uuid
 
 type Box = {
     id: number,
@@ -129,10 +131,11 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
         console.log(`Box ${shortestConnection.box.id} is on circuit ${boxCircuit?.id || "[NONE]"}, and box ${shortestConnection.neighbor.id} is on circuit ${neighborCircuit?.id || "[NONE]"}`)
         // if neither box is on a circuit,
         if (!(boxCircuit || neighborCircuit)) {
-            console.log(`Creating a new circuit ${circuits.length + 1} with boxes ${[shortestConnection.box, shortestConnection.neighbor].map(b => b.id).join(",")}`)
+            const id = randomId();
+            console.log(`Creating a new circuit ${id} with boxes ${[shortestConnection.box, shortestConnection.neighbor].map(b => b.id).join(",")}`)
             circuits.push({
                 boxes: [shortestConnection.box, shortestConnection.neighbor],
-                id: uuidv4()
+                id
             })
         }
         // if box is on a circuit
@@ -151,12 +154,12 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
         else if (boxCircuit && neighborCircuit && boxCircuit.id === neighborCircuit.id) {
             // do nothing
         }
-        else if(boxCircuit && neighborCircuit && boxCircuit.id != neighborCircuit.id){
-            // merge circuits   
-            const mergeId = uuidv4();
+        else if (boxCircuit && neighborCircuit && boxCircuit.id != neighborCircuit.id){
+             // merge circuits
+            const mergeId = randomId();
             console.log(`Merging circuits ${boxCircuit?.id} and ${neighborCircuit?.id} into ${mergeId}`);
             //@ts-ignore
-            const allBoxes = [...boxCircuit.boxes, ...neighborCircuit.boxes]
+            const allBoxes = [...boxCircuit?.boxes, ...neighborCircuit?.boxes]
             // const mergedBoxes = [...new Set(allBoxes)]
             // console.log(`Merged `)
             circuits = circuits
@@ -166,6 +169,9 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
                 boxes: allBoxes
             })
         } 
+        else {
+           
+        }
         //@ts-ignore
         return recursivelyConnectBoxes(boxes, circuits, --connections)
 
