@@ -12,8 +12,8 @@ const fs = require("node:fs/promises");
 
 
 (async () => {
-  const input = await fs.readFile("./data/day9.txt", "utf-8");
-  const output = day9.part1(input);
+  // const input = await fs.readFile("./data/day9.txt", "utf-8");
+  const output = day9.part2();
   console.log({ output });
 })();
 
