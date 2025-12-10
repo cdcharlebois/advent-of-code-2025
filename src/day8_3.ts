@@ -1,12 +1,19 @@
 import {v4 as uuid} from "uuid"
-
 const randomId = uuid
+
+/**
+ * NOTE TO SELF
+ * - For part two I think I can just inspect the logs for when the recursive
+ * function finally finishes. Also in my testing this morning, it exceeds the 
+ * call stack when one circuit has 998 boxes. 
+ */
 
 type Box = {
     id: number,
     x: number,
     y: number,
-    z: number
+    z: number,
+    directConnections: Box[]
 }
 type Circuit = {
     id: string,
@@ -49,7 +56,7 @@ const getBoxes = (data: string): Box[] => {
     return data.split("\n").map((line, i) => {
         const [x, y, z] = line.split(",");
         return {
-            x, y, z, id: i
+            x, y, z, id: i, directConnections: []
         }
     })
 }
@@ -60,7 +67,8 @@ const getClosestNeighbor = (box: Box, boxes: Box[], circuits: Circuit[]): Box | 
     // console.log("The following are already connected to ", box.id, ": ", boxesInCircuit.map(b => b.id).join(", "))
     const availableBoxes = boxes
         .filter(b => b.id != box.id) // not this box
-        .filter(b => !boxesInCircuit.find(bb => bb.id === b.id)) // not boxes in circuit
+        .filter(b => !box.directConnections.find(bb => bb.id === b.id)) // not already directly connected
+        // .filter(b => !boxesInCircuit.find(bb => bb.id === b.id)) // not boxes in circuit
     // console.log(`There are ${availableBoxes.length} available boxes`)
     if (!availableBoxes || availableBoxes.length < 1 || !availableBoxes[0]) {
         return
@@ -85,7 +93,7 @@ const part1 = (connections: number, input?: string): number => {
     const boxes = getBoxes(data);
     let circuits: Circuit[] = [];
     // find each box's closest neighbor 
-    circuits = recursivelyConnectBoxes(boxes, circuits, connections-1);
+    circuits = recursivelyConnectBoxes(boxes, circuits, connections);
     for (const c of circuits) {
         console.log(`Circuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
     }
@@ -99,9 +107,10 @@ const part1 = (connections: number, input?: string): number => {
     // return 0;
 }
 
+
 const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections: number): Circuit[] => {
-    if (connections === 0) {
-        return circuits;
+    if (circuits.length === 1 && circuits[0]!.boxes.length === boxes.length) {
+        return circuits
     }
     // console.log("Circuits at start of call", JSON.stringify(circuits, null, 2))
     //@ts-ignore
@@ -124,6 +133,8 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
             console.log(`\tCircuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
         })
         console.log(`The shortest connection is ${shortestConnection.distance.toFixed(2)}, between boxes ${shortestConnection.box.id} and ${shortestConnection.neighbor.id}`)
+        shortestConnection.box.directConnections.push(shortestConnection.neighbor);
+        shortestConnection.neighbor.directConnections.push(shortestConnection.box);
         //@ts-ignore
         const boxCircuit = circuits.find(c => c.boxes.find(b => b.id === shortestConnection.box.id));
         const neighborCircuit = circuits.find(c => c.boxes.find(b => b.id === shortestConnection.neighbor.id));
