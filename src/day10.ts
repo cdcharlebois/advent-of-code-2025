@@ -21,26 +21,7 @@ type Machine = {
   buttons: Button[];
 };
 type T = any;
-// from https://stackoverflow.com/a/20871714
-const permutator = (inputArr: T[]): T[] => {
-  let result: T = [];
 
-  const permute = (arr: T, m = []) => {
-    if (arr.length === 0) {
-      result.push(m);
-    } else {
-      for (let i = 0; i < arr.length; i++) {
-        let curr = arr.slice();
-        let next = curr.splice(i, 1);
-        permute(curr.slice(), m.concat(next));
-      }
-    }
-  };
-
-  permute(inputArr);
-
-  return result;
-};
 const getCombinations = (array: T[], n: number): T[] => {
   const result: T[] = [];
 
