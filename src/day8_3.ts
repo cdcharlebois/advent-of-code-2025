@@ -1,4 +1,4 @@
-import {v4 as uuid} from "uuid"
+import { v4 as uuid } from "uuid"
 const randomId = uuid
 
 /**
@@ -68,7 +68,7 @@ const getClosestNeighbor = (box: Box, boxes: Box[], circuits: Circuit[]): Box | 
     const availableBoxes = boxes
         .filter(b => b.id != box.id) // not this box
         .filter(b => !box.directConnections.find(bb => bb.id === b.id)) // not already directly connected
-        // .filter(b => !boxesInCircuit.find(bb => bb.id === b.id)) // not boxes in circuit
+    // .filter(b => !boxesInCircuit.find(bb => bb.id === b.id)) // not boxes in circuit
     // console.log(`There are ${availableBoxes.length} available boxes`)
     if (!availableBoxes || availableBoxes.length < 1 || !availableBoxes[0]) {
         return
@@ -93,13 +93,32 @@ const part1 = (connections: number, input?: string): number => {
     const boxes = getBoxes(data);
     let circuits: Circuit[] = [];
     // find each box's closest neighbor 
-    circuits = recursivelyConnectBoxes(boxes, circuits, connections);
+    circuits = iterativelyConnectBoxes(boxes, circuits, connections);
     for (const c of circuits) {
         console.log(`Circuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
     }
     const top3 = circuits.sort((a, b) => b.boxes.length - a.boxes.length).slice(0, 3)
     console.log("--- Top 3 ---")
-    for (const c of top3){
+    for (const c of top3) {
+        console.log(`Circuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
+    }
+    return top3.reduce((prev, curr) => prev * curr.boxes.length, 1);
+    // console.log(circuits);
+    // return 0;
+}
+const part2 = (input?: string): number => {
+    const data = getData(input);
+    // console.log({data})
+    const boxes = getBoxes(data);
+    let circuits: Circuit[] = [];
+    // find each box's closest neighbor 
+    circuits = iterativelyConnectBoxes(boxes, circuits);
+    for (const c of circuits) {
+        console.log(`Circuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
+    }
+    const top3 = circuits.sort((a, b) => b.boxes.length - a.boxes.length).slice(0, 3)
+    console.log("--- Top 3 ---")
+    for (const c of top3) {
         console.log(`Circuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
     }
     return top3.reduce((prev, curr) => prev * curr.boxes.length, 1);
@@ -165,8 +184,8 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
         else if (boxCircuit && neighborCircuit && boxCircuit.id === neighborCircuit.id) {
             // do nothing
         }
-        else if (boxCircuit && neighborCircuit && boxCircuit.id != neighborCircuit.id){
-             // merge circuits
+        else if (boxCircuit && neighborCircuit && boxCircuit.id != neighborCircuit.id) {
+            // merge circuits
             const mergeId = randomId();
             console.log(`Merging circuits ${boxCircuit?.id} and ${neighborCircuit?.id} into ${mergeId}`);
             //@ts-ignore
@@ -179,9 +198,9 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
                 id: mergeId,
                 boxes: allBoxes
             })
-        } 
+        }
         else {
-           
+
         }
         //@ts-ignore
         return recursivelyConnectBoxes(boxes, circuits, --connections)
@@ -190,6 +209,95 @@ const recursivelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections:
 
 }
 
+const iterativelyConnectBoxes = (boxes: Box[], circuits: Circuit[], connections?: number): Circuit[] => {
+    do {
+        if (circuits.length === 1 && circuits[0]!.boxes.length === boxes.length) {
+            return circuits
+        }
+        //@ts-ignore
+        const neighborMap: { box: Box | null, neighbor: Box, distance: number }[] = boxes.map(b => {
+            const neighbor = getClosestNeighbor(b, boxes, circuits);
+            return {
+                box: b,
+                neighbor: neighbor,
+                distance: neighbor ? getDistance(b, neighbor) : null
+            }
+        })
+
+        // connect the shortest connection
+        const shortestConnection = neighborMap.sort((a, b) => a.distance - b.distance)[0]
+        if (!shortestConnection || !shortestConnection.box || !shortestConnection.neighbor) {
+            return circuits
+        } else {
+            console.log(`----------`)
+            console.log(`${circuits.length} circuits exist:`)
+            circuits.forEach(c => {
+                console.log(`\tCircuit ${c.id} has ${c.boxes.length} boxes: (${c.boxes.map(b => b.id).join(",")})`)
+            })
+            console.log(`The shortest connection is ${shortestConnection.distance.toFixed(2)}, between boxes ${shortestConnection.box.id} and ${shortestConnection.neighbor.id}`)
+            console.log(`Product is ${shortestConnection.box.x * shortestConnection.neighbor.x}`)
+            shortestConnection.box.directConnections.push(shortestConnection.neighbor);
+            shortestConnection.neighbor.directConnections.push(shortestConnection.box);
+            //@ts-ignore
+            const boxCircuit = circuits.find(c => c.boxes.find(b => b.id === shortestConnection.box.id));
+            const neighborCircuit = circuits.find(c => c.boxes.find(b => b.id === shortestConnection.neighbor.id));
+            // console.log({ boxCircuit, neighborCircuit })
+            console.log(`Box ${shortestConnection.box.id} is on circuit ${boxCircuit?.id || "[NONE]"}, and box ${shortestConnection.neighbor.id} is on circuit ${neighborCircuit?.id || "[NONE]"}`)
+            // if neither box is on a circuit,
+            if (!(boxCircuit || neighborCircuit)) {
+                const id = randomId();
+                console.log(`Creating a new circuit ${id} with boxes ${[shortestConnection.box, shortestConnection.neighbor].map(b => b.id).join(",")}`)
+                circuits.push({
+                    boxes: [shortestConnection.box, shortestConnection.neighbor],
+                    id
+                })
+            }
+            // if box is on a circuit
+            else if (boxCircuit && !neighborCircuit) {
+                console.log(`Adding box ${shortestConnection.neighbor.id} to circuit ${boxCircuit.id}`)
+                // add neighbor to boxCircuit
+                boxCircuit.boxes.push(shortestConnection.neighbor);
+            }
+            // if neighbor is on a circuit
+            else if (!boxCircuit && neighborCircuit) {
+                console.log(`Adding box ${shortestConnection.box.id} to circuit ${neighborCircuit.id}`)
+                // add box to neighborCircuit
+                neighborCircuit.boxes.push(shortestConnection.box);
+            }
+            // if both on same circuit
+            else if (boxCircuit && neighborCircuit && boxCircuit.id === neighborCircuit.id) {
+                // do nothing
+            }
+            else if (boxCircuit && neighborCircuit && boxCircuit.id != neighborCircuit.id) {
+                // merge circuits
+                const mergeId = randomId();
+                console.log(`Merging circuits ${boxCircuit?.id} and ${neighborCircuit?.id} into ${mergeId}`);
+                //@ts-ignore
+                const allBoxes = [...boxCircuit?.boxes, ...neighborCircuit?.boxes]
+                // const mergedBoxes = [...new Set(allBoxes)]
+                // console.log(`Merged `)
+                circuits = circuits
+                    .filter(c => !(c.id === boxCircuit.id || c.id === neighborCircuit.id));
+                circuits.push({
+                    id: mergeId,
+                    boxes: allBoxes
+                })
+            }
+            else {
+
+            }
+            //@ts-ignore
+            // return recursivelyConnectBoxes(boxes, circuits, --connections)
+
+        }
+        if (connections){
+            connections--;
+        }
+    } while ( connections ? connections > 0 : !(circuits.length === 1 && circuits[0]!.boxes.length === boxes.length) )
+    return circuits;
+    // console.log("Circuits at start of call", JSON.stringify(circuits, null, 2))
+}
+
 export default {
-    part1
+    part1, part2
 }

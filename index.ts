@@ -4,8 +4,8 @@ import fs from "node:fs/promises"
 
 
 (async () => {
-  const input = await fs.readFile("./data/day10.txt", "utf-8");
-  const output = day10.part1(input);
-  // const output = day8_3.part1(10);
+  const input = await fs.readFile("./data/day8.txt", "utf-8");
+  // const output = day8_3.part1(1000, input);
+  const output = day8_3.part2(input);
   console.log({ output });
 })();
