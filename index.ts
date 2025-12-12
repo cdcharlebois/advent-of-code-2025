@@ -1,4 +1,5 @@
 import day10 from "./src/day10.js";
+import day11 from "./src/day11.js";
 import day8_3 from "./src/day8_3.js";
 import fs from "node:fs/promises"
 import day9 from "./src/day9.js";
