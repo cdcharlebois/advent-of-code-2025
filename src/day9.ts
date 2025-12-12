@@ -94,8 +94,8 @@ const part2 = (input?: string): number => {
       }
     }
   }
-  rectangles.sort((a, b) => b.area - a.area);
-  const largest = rectangles[0];
+  const filtered = rectangles.filter(r => validateRectangle(r, rectangles, points)).sort((a, b) => b.area - a.area);
+  const largest = filtered[0];
   console.log(`Total rectangles: ${rectangles.length}`);
   console.log(
     `Largest rectangle points: ${largest!.points
@@ -103,35 +103,111 @@ const part2 = (input?: string): number => {
       .join("-")}`
   );
   console.log(`Largest rectangle area: ${largest!.area}, ID: ${largest?.id}`);
+  console.log(validateRectangle(largest!, rectangles, points))
   return largest!.area;
 };
 
-const validateRectangle = (rect: Rectange, rectanges: Rectange[]): boolean => {
-    // need to orient the rectangle
-    const [firstPoint, secondPoint] = rect.points;
-    let direction;
-    //@ts-ignore
-    if (firstPoint.x < secondPoint.x && firstPoint.y < secondPoint.y) {
-        // first point is top-left, second is bottom-right
-        direction = "se"
-        //@ts-ignore
-    } else  if (firstPoint.x < secondPoint.x && firstPoint.y > secondPoint.y) {
-        direction = "ne"
-        //@ts-ignore
-    } else if (firstPoint.x > secondPoint.x && firstPoint.y < secondPoint.y) {
-        direction = "sw"
-        //@ts-ignore
-    } else if (firstPoint.x > secondPoint.x && firstPoint.y > secondPoint.y) {
-        direction = "nw"
+const validateRectangle = (rect: Rectange, rectanges: Rectange[], allPoints: TPoint[]): boolean => {
+  /**
+   * A rectangle with points (x1, y1), (x2, y2) 
+   * [and shadow points (x1, y2), (x2, y1)] is valid if there exists a point in
+   * each of the following regions:
+   * 1. (0,0):(x1, y1) -> Above and left
+   * 2. (x2, y2): (Infinity, Infinity) -> below and right 
+   * 3. (0, y2): (x1, Infinity) -> brelow and left
+   * 4. (x2, 0): (Infinty, y1) -> above and right
+   */
+  let a, b, c, d;
+  // are the points in rect AD or CB?
+  const [p1, p2] = rect.points;
+  if (p1!.x < p2!.x) {
+    // p1 is left of p2
+    if (p1!.y < p2!.y) {
+      // p1 is above p2
+      a = p1;
+      d = p2;
+      b = { x: d!.x, y: a!.y } as TPoint
+      c = { x: a!.x, y: d!.y } as TPoint
+    } else if (p1!.y > p2!.y) {
+      // p1 is below p2
+      c = p1;
+      b = p2;
+      a = { x: c?.x, y: b?.y } as TPoint
+      d = { x: b?.x, y: c?.y } as TPoint
+    } else {
+      // there's the same y value
+      a = c = p1;
+      b = d = p2;
     }
-    switch (direction) {
-        case "se":
-            // on the min x column, need a point at max Y or greater
+  } else if (p1!.x > p2!.x) {
+    // p1 is right of p2
+    if (p1!.y < p2!.y) {
+      // p1 is above p2
+      b = p1;
+      c = p2;
+      a = { x: c?.x, y: b?.y } as TPoint
+      d = { x: b?.x, y: c?.y } as TPoint
+    } else if (p1!.y > p2!.y) {
+      // p1 is below p2
+      d = p1;
+      a = p2;
+      b = { x: d!.x, y: a!.y } as TPoint
+      c = { x: a!.x, y: d!.y } as TPoint
+    } else {
+      // there's the same y value
+      a = c = p1;
+      b = d = p2;
     }
-    return true;
+  }
+  console.log(`This rectange has points
+    A: (${a?.x}, ${a?.y})
+    B: (${b?.x}, ${b?.y})
+    C: (${c?.x}, ${c?.y})
+    D: (${d?.x}, ${d?.y})`)
+  // assign rectangle's points to a, b, c, d such that:
+  /**
+   * (1) |       | (4)
+   *  ---A-------B---
+   *     |       |
+   *  ---C-------D---
+   * (3) |       | (2)
+   */
+  // filter points to see if one exists in each range 1,2,3,4
+    /**
+     * @todo new!
+     */
+  // the points in (1,4) and (2,3) need to have matching y values
+  // the points in (1,3) and (2,4) need to have matching x values
+  const origin : TPoint = {
+    x: 0, y: 0
+  }
+  const inf : TPoint = {
+    x: Infinity, y: Infinity 
+  }
+  const pointInRange1 = findPointInBounds(origin, a!, allPoints);
+  const pointInRange2 = findPointInBounds(d!, inf, allPoints);
+  const pointInRange3 = findPointInBounds({x: 0, y: c!.y}, {x: c!.x, y: Infinity}, allPoints);
+  const pointInRange4 = findPointInBounds({x: b!.x, y: 0}, {x: Infinity, y: b!.y}, allPoints);
+  console.log({pointInRange1, pointInRange2, pointInRange3, pointInRange4})
+  return pointInRange1 && pointInRange2 && pointInRange3 && pointInRange4;
+}
+
+const findPointInBounds = (topLeft: TPoint, bottomRight: TPoint, allPoints: TPoint[]): boolean => {
+  const minX = topLeft.x,
+    maxX = bottomRight.x,
+    minY = topLeft.y,
+    maxY = bottomRight.y;
+
+  return allPoints.some(p => {
+    return minX <= p.x && p.x <= maxX &&
+      minY <= p.y && p.y <= maxY
+  })
 }
 
 export default {
   part1,
   part2,
 };
+
+// 4776100539 first answer
+// 4647960552 too high
